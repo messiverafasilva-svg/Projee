@@ -1,645 +1,378 @@
+
 <!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NEXUS // SOLVE — Küresel Problem Çözüm Motoru</title>
+  <title>SWARM // SQUAD — Kişisel Agent Topluluğu</title>
   <style>
     :root {
-      --bg: #07090f;
-      --surface: #0e1320;
-      --surface-elevated: #141c2f;
-      --border: rgba(148, 163, 184, 0.14);
-      --border-strong: rgba(56, 189, 248, 0.35);
+      --bg: #05070d;
+      --card: #0b111e;
+      --card2: #111a2e;
+      --line: rgba(148, 163, 184, 0.15);
       --text: #f8fafc;
-      --text-secondary: #94a3b8;
-      --text-muted: #64748b;
-      --primary: #38bdf8;
-      --primary-ink: #03131c;
-      --accent: #10b981;
-      --warn: #f59e0b;
-      --danger: #f43f5e;
-      --radius-lg: 16px;
-      --radius-md: 12px;
-      --radius-sm: 8px;
-      --shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+      --muted: #94a3b8;
+      --cyan: #38bdf8;
+      --green: #10b981;
+      --amber: #f59e0b;
+      --rose: #fb7185;
     }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
       background:
-        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(56, 189, 248, 0.14), transparent),
-        radial-gradient(ellipse 60% 40% at 85% 10%, rgba(16, 185, 129, 0.08), transparent),
+        radial-gradient(circle at 20% -10%, rgba(56, 189, 248, 0.14), transparent 50%),
+        radial-gradient(circle at 85% 0%, rgba(16, 185, 129, 0.1), transparent 45%),
         var(--bg);
       color: var(--text);
+      padding: 18px 14px 64px;
       line-height: 1.55;
-      min-height: 100vh;
-      padding: 20px 16px 64px;
-      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 880px; margin: 0 auto; }
+    .head {
+      display: flex; justify-content: space-between; align-items: center; gap: 12px;
+      padding-bottom: 16px; border-bottom: 1px solid var(--line); margin-bottom: 20px; flex-wrap: wrap;
+    }
+    .brand { font-weight: 900; font-size: 1.25rem; letter-spacing: -0.02em; }
+    .sub { color: var(--muted); font-size: 0.82rem; }
+    .badge-free {
+      padding: 6px 12px; border-radius: 999px; font-size: 0.76rem; font-weight: 800;
+      background: rgba(16, 185, 129, 0.14); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35);
     }
 
-    .container {
-      max-width: 860px;
-      margin: 0 auto;
+    /* Agent Roster */
+    .roster {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px;
     }
-
-    /* Header */
-    .topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding-bottom: 18px;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 24px;
-      flex-wrap: wrap;
+    @media (max-width: 740px) { .roster { grid-template-columns: repeat(2, 1fr); } }
+    .agent-card {
+      background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px;
+      transition: border-color 0.2s ease, transform 0.2s ease;
     }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
+    .agent-card.active {
+      border-color: var(--cyan); box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.16); transform: translateY(-1px);
     }
+    .agent-card.done { border-color: rgba(16, 185, 129, 0.45); }
+    .agent-role { font-size: 0.82rem; font-weight: 800; color: var(--cyan); }
+    .agent-desc { font-size: 0.76rem; color: var(--muted); margin-top: 3px; }
+    .agent-state { font-size: 0.72rem; font-weight: 700; margin-top: 8px; color: var(--muted); }
+    .agent-card.active .agent-state { color: var(--cyan); }
+    .agent-card.done .agent-state { color: #34d399; }
 
-    .brand-mark {
-      width: 38px;
-      height: 38px;
-      border-radius: 10px;
-      background: linear-gradient(135deg, var(--primary), var(--accent));
-      display: grid;
-      place-items: center;
-      color: #041018;
-      font-weight: 900;
-      font-size: 1rem;
-      letter-spacing: -0.03em;
-      box-shadow: 0 8px 24px rgba(56, 189, 248, 0.25);
+    .box {
+      background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+      padding: 18px; margin-bottom: 16px;
     }
-
-    .brand-title {
-      font-size: 1.15rem;
-      font-weight: 800;
-      letter-spacing: -0.02em;
+    .lbl {
+      display: block; font-size: 0.75rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--muted); margin-bottom: 7px;
     }
-
-    .brand-sub {
-      font-size: 0.78rem;
-      color: var(--text-secondary);
+    .chips { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 14px; }
+    .chip {
+      background: var(--card2); color: #cbd5e1; border: 1px solid var(--line);
+      border-radius: 999px; padding: 6px 12px; font-size: 0.78rem; font-weight: 700; cursor: pointer;
     }
-
-    .status-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      padding: 6px 12px;
-      border-radius: 999px;
-      font-size: 0.76rem;
-      font-weight: 700;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text-secondary);
+    .chip:hover { border-color: var(--cyan); color: #fff; }
+    textarea, input {
+      width: 100%; background: #050811; color: var(--text); border: 1px solid var(--line);
+      border-radius: 12px; padding: 12px 14px; font-size: 0.94rem; font-family: inherit; margin-bottom: 12px;
     }
-
-    .dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--accent);
-      box-shadow: 0 0 8px var(--accent);
-    }
-
-    .dot.warn {
-      background: var(--warn);
-      box-shadow: 0 0 8px var(--warn);
-    }
-
-    /* Hero */
-    .hero {
-      margin-bottom: 22px;
-    }
-
-    .hero h1 {
-      font-size: clamp(1.55rem, 4vw, 2.25rem);
-      font-weight: 850;
-      line-height: 1.18;
-      letter-spacing: -0.03em;
-      margin-bottom: 8px;
-    }
-
-    .hero p {
-      color: var(--text-secondary);
-      font-size: 0.96rem;
-      max-width: 66ch;
-    }
-
-    /* Cards */
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 20px;
-      margin-bottom: 18px;
-      box-shadow: var(--shadow);
-    }
-
-    .section-label {
-      display: block;
-      font-size: 0.76rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--text-muted);
-      margin-bottom: 8px;
-    }
-
-    /* Preset Pills */
-    .presets {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-bottom: 16px;
-    }
-
-    .preset-chip {
-      background: var(--surface-elevated);
-      border: 1px solid var(--border);
-      color: var(--text-secondary);
-      padding: 7px 12px;
-      border-radius: 999px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-
-    .preset-chip:hover {
-      color: var(--text);
-      border-color: var(--border-strong);
-      background: rgba(56, 189, 248, 0.08);
-    }
-
-    /* Form Controls */
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1.4fr 0.8fr;
-      gap: 12px;
-      margin-bottom: 14px;
-    }
-
-    @media (max-width: 680px) {
-      .grid-2 {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    textarea, input, select {
-      width: 100%;
-      background: var(--bg);
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      padding: 13px 14px;
-      font-size: 0.95rem;
-      font-family: inherit;
-      transition: border-color 0.15s ease, box-shadow 0.15s ease;
-    }
-
-    textarea {
-      min-height: 104px;
-      resize: vertical;
-      margin-bottom: 14px;
-    }
-
-    textarea:focus, input:focus, select:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.14);
-    }
-
-    /* Buttons */
-    .actions-main {
-      display: grid;
-      grid-template-columns: 1.5fr 1fr;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-
-    @media (max-width: 600px) {
-      .actions-main {
-        grid-template-columns: 1fr;
-      }
-    }
-
+    textarea { min-height: 92px; resize: vertical; }
+    textarea:focus, input:focus { outline: none; border-color: var(--cyan); }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    @media (max-width: 600px) { .row2 { grid-template-columns: 1fr; } }
+    .btn-row { display: grid; grid-template-columns: 1.5fr 1fr; gap: 10px; }
+    @media (max-width: 600px) { .btn-row { grid-template-columns: 1fr; } }
     button {
-      font-family: inherit;
-      font-weight: 700;
-      font-size: 0.92rem;
-      border-radius: var(--radius-md);
-      padding: 13px 16px;
-      cursor: pointer;
-      border: 1px solid transparent;
-      transition: transform 0.08s ease, opacity 0.15s ease, background 0.15s ease;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
+      border: none; border-radius: 12px; padding: 13px 16px; font-weight: 800;
+      font-size: 0.92rem; cursor: pointer; font-family: inherit;
     }
+    .btn-run { background: var(--cyan); color: #03131c; }
+    .btn-share { background: var(--card2); color: #fff; border: 1px solid var(--line); }
+    .btn-mini {
+      background: var(--card2); color: var(--text); border: 1px solid var(--line);
+      border-radius: 9px; padding: 7px 11px; font-size: 0.78rem; font-weight: 700;
+    }
+    .status { font-size: 0.82rem; color: var(--muted); margin-top: 10px; min-height: 18px; }
 
-    button:active {
-      transform: scale(0.99);
+    .feed-item {
+      border-top: 1px solid var(--line); padding-top: 14px; margin-top: 14px;
     }
-
-    button:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
+    .feed-item:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+    .feed-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .feed-title { font-weight: 800; font-size: 0.95rem; color: var(--cyan); }
+    .feed-tag {
+      font-size: 0.7rem; font-weight: 800; padding: 3px 8px; border-radius: 999px;
+      background: rgba(56, 189, 248, 0.12); color: var(--cyan);
     }
-
-    .btn-primary {
-      background: var(--primary);
-      color: var(--primary-ink);
-    }
-
-    .btn-primary:hover:not(:disabled) {
-      filter: brightness(1.06);
-    }
-
-    .btn-share {
-      background: rgba(16, 185, 129, 0.14);
-      color: #6ee7b7;
-      border-color: rgba(16, 185, 129, 0.35);
-    }
-
-    .btn-share:hover:not(:disabled) {
-      background: rgba(16, 185, 129, 0.22);
-    }
-
-    .btn-secondary {
-      background: var(--surface-elevated);
-      color: var(--text);
-      border-color: var(--border);
-      padding: 9px 12px;
-      font-size: 0.82rem;
-      border-radius: var(--radius-sm);
-    }
-
-    .btn-secondary:hover:not(:disabled) {
-      border-color: var(--border-strong);
-    }
-
-    .feedback-bar {
-      font-size: 0.82rem;
-      color: var(--text-secondary);
-      margin-top: 6px;
-      min-height: 20px;
-    }
-
-    /* Output Area */
-    .result-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      flex-wrap: wrap;
-      padding-bottom: 14px;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 16px;
-    }
-
-    .result-badge {
-      font-size: 0.74rem;
-      font-weight: 800;
-      padding: 4px 10px;
-      border-radius: 999px;
-      letter-spacing: 0.02em;
-    }
-
-    .badge-live {
-      background: rgba(16, 185, 129, 0.16);
-      color: #34d399;
-      border: 1px solid rgba(16, 185, 129, 0.35);
-    }
-
-    .badge-local {
-      background: rgba(245, 158, 11, 0.16);
-      color: #fbbf24;
-      border: 1px solid rgba(245, 158, 11, 0.35);
-    }
-
-    .toolbar-mini {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .solution-body {
-      font-size: 0.96rem;
-      color: #e2e8f0;
-      white-space: pre-wrap;
-    }
-
-    .solution-body h3 {
-      font-size: 1rem;
-      color: var(--primary);
-      margin: 16px 0 6px;
-    }
-
-    .solution-body h3:first-child {
-      margin-top: 0;
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 36px 16px;
-      color: var(--text-muted);
-      font-size: 0.92rem;
-    }
-
-    /* Collapsible Settings */
-    details {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 16px 20px;
-    }
-
-    summary {
-      cursor: pointer;
-      font-weight: 700;
-      font-size: 0.9rem;
-      color: var(--text-secondary);
-      list-style: none;
-    }
-
-    summary::-webkit-details-marker {
-      display: none;
-    }
-
-    .settings-grid {
-      margin-top: 14px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    @media (max-width: 640px) {
-      .settings-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .span-2 {
-      grid-column: 1 / -1;
-    }
-
-    .hint {
-      font-size: 0.78rem;
-      color: var(--text-muted);
-      margin-top: 4px;
-    }
+    .feed-body { white-space: pre-wrap; font-size: 0.91rem; color: #e2e8f0; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <header class="topbar">
-      <div class="brand">
-        <div class="brand-mark">NX</div>
-        <div>
-          <div class="brand-title">NEXUS // SOLVE</div>
-          <div class="brand-sub">GitHub Pages • Sıfır Maliyet • Canlı AI Problem Motoru</div>
-        </div>
+  <div class="wrap">
+    <header class="head">
+      <div>
+        <div class="brand">SWARM // SQUAD</div>
+        <div class="sub">Kişisel 4-Ajanlı Problem, Strateji & İcra Topluluğu • Sıfır Maliyet</div>
       </div>
-      <div class="status-pill" id="engineStatus">
-        <span class="dot" id="statusDot"></span>
-        <span id="statusText">Hazır</span>
-      </div>
+      <div class="badge-free">0 TL • 4 AJAN AKTİF</div>
     </header>
 
-    <section class="hero">
-      <h1>En zor problemini yaz, saniyeler içinde net çıkış planı al.</h1>
-      <p>Karmaşık hedefleri, kararsızlıkları ve zaman/kaynak sıkışmalarını uygulanabilir adımlara dönüştürür. Ürettiğin çözümü tek linkle başkasına gönderebilirsin.</p>
-    </section>
-
-    <main class="card">
-      <span class="section-label">Hızlı Başlangıç Senaryoları</span>
-      <div class="presets">
-        <button type="button" class="preset-chip" data-problem="30 günde sıfır reklam bütçesiyle yüksek etkileşimli bir ürün veya içerik akışı büyütmek" data-constraint="30 gün, sıfır bütçe, günde 1-2 saat">Büyüme & Dağıtım</button>
-        <button type="button" class="preset-chip" data-problem="Birden fazla hedef ve görev arasında dağılmadan en yüksek getirili işe odaklanmak" data-constraint="7 gün, yüksek odak">Odak & İcra</button>
-        <button type="button" class="preset-chip" data-problem="İki kritik seçenek arasında risk ve getiri analizi yaparak net karar vermek" data-constraint="48 saat içinde karar">Kritik Karar</button>
-        <button type="button" class="preset-chip" data-problem="Büyük ve göz korkutan bir işi küçük, ölçülebilir günlük adımlara bölmek" data-constraint="14 gün, adım adım ilerleme">Karmaşık Hedef</button>
+    <section class="roster" id="roster">
+      <div class="agent-card" id="ag-strategist">
+        <div class="agent-role">1. STRATEJİST</div>
+        <div class="agent-desc">Darboğazı ve en yüksek kaldıraçlı hamleyi seçer.</div>
+        <div class="agent-state" id="st-strategist">Beklemede</div>
       </div>
-
-      <label for="problemInput" class="section-label">Çözmek İstediğin Sorun veya Hedef</label>
-      <textarea id="problemInput" placeholder="Örneğin: Önümdeki 2 haftada büyük bir hedefi tamamlamam gerekiyor ama nereden başlayacağımı ve zamanı nasıl böleceğimi netleştiremedim..."></textarea>
-
-      <div class="grid-2">
-        <div>
-          <label for="constraintInput" class="section-label">Süre, Bütçe veya Kısıt</label>
-          <input id="constraintInput" placeholder="Örneğin: 14 gün, sıfır maliyet, tek kişi" />
-        </div>
-        <div>
-          <label for="modeSelect" class="section-label">Çözüm Derinliği</label>
-          <select id="modeSelect">
-            <option value="concise">Hızlı & Net (Aksiyon Odaklı)</option>
-            <option value="deep" selected>Stratejik & Derin (Analiz + Plan + Risk)</option>
-          </select>
-        </div>
+      <div class="agent-card" id="ag-executor">
+        <div class="agent-role">2. İCRA LİDERİ</div>
+        <div class="agent-desc">İlk 24–72 saat için somut ve sıraya konmuş plan çıkarır.</div>
+        <div class="agent-state" id="st-executor">Beklemede</div>
       </div>
-
-      <div class="actions-main">
-        <button type="button" id="solveBtn" class="btn-primary">Çözüm Planı Oluştur</button>
-        <button type="button" id="shareBtn" class="btn-share">Paylaşılabilir Link Kopyala</button>
+      <div class="agent-card" id="ag-critic">
+        <div class="agent-role">3. DENETÇİ</div>
+        <div class="agent-desc">Tuzakları, erteleme riskini ve eksik noktaları yakalar.</div>
+        <div class="agent-state" id="st-critic">Beklemede</div>
       </div>
-
-      <div id="feedbackBar" class="feedback-bar">İpucu: Sorunu ne kadar net yazarsan plan o kadar keskin çıkar.</div>
-    </main>
-
-    <section class="card" id="outputCard">
-      <div class="result-header">
-        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <strong>Çözüm & İcra Planı</strong>
-          <span id="sourceBadge" class="result-badge badge-live" style="display:none;">CANLI AI</span>
-        </div>
-        <div class="toolbar-mini">
-          <button type="button" id="copyPlanBtn" class="btn-secondary">Metni Kopyala</button>
-          <button type="button" id="downloadMdBtn" class="btn-secondary">.MD İndir</button>
-          <button type="button" id="clearBtn" class="btn-secondary">Temizle</button>
-        </div>
-      </div>
-      <div id="outputContent" class="empty-state">
-        Henüz bir çözüm üretilmedi. Yukarıya bir sorun yaz ve <strong>Çözüm Planı Oluştur</strong> butonuna bas.
+      <div class="agent-card" id="ag-growth">
+        <div class="agent-role">4. YAYILIM AJANI</div>
+        <div class="agent-desc">Sonucu paylaşılabilir kanca ve tek satır özete çevirir.</div>
+        <div class="agent-state" id="st-growth">Beklemede</div>
       </div>
     </section>
 
-    <details>
-      <summary>Gelişmiş Ayarlar (İsteğe Bağlı Ücretsiz/Özel API Endpoint)</summary>
-      <div class="settings-grid">
+    <section class="box">
+      <span class="lbl">Hazır Görev Kancaları</span>
+      <div class="chips">
+        <button type="button" class="chip" data-goal="Sıfır maliyetle yüksek erişim ve etkileşim üreten bir sistem kurmak" data-ctx="Hızlı ivme, günlük icra, düşük sürtünme">Büyüme & Erişim</button>
+        <button type="button" class="chip" data-goal="Büyük bir hedefi parçalayıp ertelemeden ilk somut sonuca ulaşmak" data-ctx="Net öncelik, kısa döngüler, sıfır bahane">Hedef & İcra</button>
+        <button type="button" class="chip" data-goal="Zor bir kararda en yüksek getiri ve en düşük riske giden yolu seçmek" data-ctx="Net kıyas, hızlı doğrulama">Stratejik Karar</button>
+      </div>
+
+      <label for="goalInput" class="lbl">Agent Topluluğuna Vereceğin Görev / Hedef</label>
+      <textarea id="goalInput" placeholder="Ekibinin çözmesini istediğin hedefi, işi veya tıkanıklığı yaz..."></textarea>
+
+      <div class="row2">
         <div>
-          <label for="endpointInput" class="section-label">OpenAI-Uyumlu Endpoint</label>
-          <input id="endpointInput" placeholder="https://text.pollinations.ai/openai" />
-          <div class="hint">Boş bırakılırsa ücretsiz varsayılan uç noktalar ve yerel motor kullanılır.</div>
+          <label for="ctxInput" class="lbl">Kısıtlar & Süre</label>
+          <input id="ctxInput" placeholder="Örn: sıfır bütçe, 7 gün, tek kişi" />
         </div>
         <div>
-          <label for="modelInput" class="section-label">Model Adı</label>
-          <input id="modelInput" placeholder="openai" />
-          <div class="hint">Seçili sağlayıcıda desteklenen ücretsiz/standart model adı.</div>
-        </div>
-        <div class="span-2">
-          <label for="apiKeyInput" class="section-label">API Anahtarı (İsteğe Bağlı — Sadece Tarayıcıda Tutulur)</label>
-          <input id="apiKeyInput" type="password" placeholder="İsteğe bağlı ücretsiz/kişisel API anahtarı" />
-        </div>
-        <div class="span-2">
-          <button type="button" id="saveSettingsBtn" class="btn-secondary">Ayarları Kaydet</button>
+          <label for="focusInput" class="lbl">Öncelik Odak</label>
+          <input id="focusInput" placeholder="Örn: hız, netlik, yayılım" />
         </div>
       </div>
-    </details>
+
+      <div class="btn-row">
+        <button type="button" id="runSquadBtn" class="btn-run">Agent Topluluğunu Çalıştır</button>
+        <button type="button" id="shareSquadBtn" class="btn-share">Bu Görevi Linkle Paylaş</button>
+      </div>
+      <div id="statusMsg" class="status">Hazır • Görev verdiğinde 4 ajan sırayla çalışır.</div>
+    </section>
+
+    <section class="box">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+        <strong>Agent Topluluğu Çıktı Akışı</strong>
+        <div style="display:flex; gap:6px;">
+          <button type="button" id="copyAllBtn" class="btn-mini">Tüm Akışı Kopyala</button>
+          <button type="button" id="clearFeedBtn" class="btn-mini">Temizle</button>
+        </div>
+      </div>
+      <div id="feedArea" class="sub">Henüz görev çalıştırılmadı.</div>
+    </section>
   </div>
 
   <script>
-    const STORAGE_KEY = "nexus_solve_pro_v1";
+    const KEY = "swarm_squad_v1";
+    const goalInput = document.getElementById("goalInput");
+    const ctxInput = document.getElementById("ctxInput");
+    const focusInput = document.getElementById("focusInput");
+    const statusMsg = document.getElementById("statusMsg");
+    const feedArea = document.getElementById("feedArea");
 
-    const defaultPrefs = () => ({
-      endpoint: "",
-      model: "openai",
-      apiKey: "",
-      lastProblem: "",
-      lastConstraint: "",
-      lastMode: "deep",
-      lastPlanText: "",
-      lastSource: ""
+    const AGENTS = [
+      { id: "strategist", name: "1. STRATEJİST", tag: "KÖK & KALDIRAÇ" },
+      { id: "executor", name: "2. İCRA LİDERİ", tag: "24-72 SAAT PLAN" },
+      { id: "critic", name: "3. DENETÇİ", tag: "RİSK & FİLTRE" },
+      { id: "growth", name: "4. YAYILIM AJANI", tag: "KANCA & ÖZET" }
+    ];
+
+    let lastFeed = [];
+
+    try {
+      const saved = JSON.parse(localStorage.getItem(KEY) || "{}");
+      if (saved.goal) goalInput.value = saved.goal;
+      if (saved.ctx) ctxInput.value = saved.ctx;
+      if (saved.focus) focusInput.value = saved.focus;
+      if (Array.isArray(saved.feed) && saved.feed.length) {
+        lastFeed = saved.feed;
+        renderFeed(lastFeed);
+      }
+    } catch {}
+
+    const params = new URLSearchParams(location.search);
+    if (params.get("g")) goalInput.value = params.get("g");
+    if (params.get("c")) ctxInput.value = params.get("c");
+
+    document.querySelectorAll(".chip").forEach(ch => {
+      ch.addEventListener("click", () => {
+        goalInput.value = ch.dataset.goal;
+        ctxInput.value = ch.dataset.ctx;
+        statusMsg.textContent = `"${ch.textContent}" görevi yüklendi.`;
+      });
     });
 
-    let prefs = (() => {
-      try {
-        return { ...defaultPrefs(), ...JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") };
-      } catch {
-        return defaultPrefs();
+    function setAgentState(id, mode, label) {
+      const card = document.getElementById("ag-" + id);
+      const st = document.getElementById("st-" + id);
+      card.classList.remove("active", "done");
+      if (mode) card.classList.add(mode);
+      st.textContent = label;
+    }
+
+    function resetAgents() {
+      AGENTS.forEach(a => setAgentState(a.id, "", "Beklemede"));
+    }
+
+    function localAgentReply(agentId, goal, ctx, focus, prevSummary) {
+      const c = ctx || "kısıtlı süre ve sıfır bütçe";
+      const f = focus || "hız ve net sonuç";
+      if (agentId === "strategist") {
+        return `"${goal}" (${c}) için asıl kaldıraç, tek bir net çıktıya kilitlenip gereksiz dağınıklığı kesmektir. Odak: ${f}.`;
       }
-    })();
-
-    let currentMarkdown = prefs.lastPlanText || "";
-
-    const el = {
-      problem: document.getElementById("problemInput"),
-      constraint: document.getElementById("constraintInput"),
-      mode: document.getElementById("modeSelect"),
-      solveBtn: document.getElementById("solveBtn"),
-      shareBtn: document.getElementById("shareBtn"),
-      copyPlanBtn: document.getElementById("copyPlanBtn"),
-      downloadMdBtn: document.getElementById("downloadMdBtn"),
-      clearBtn: document.getElementById("clearBtn"),
-      feedback: document.getElementById("feedbackBar"),
-      output: document.getElementById("outputContent"),
-      badge: document.getElementById("sourceBadge"),
-      statusDot: document.getElementById("statusDot"),
-      statusText: document.getElementById("statusText"),
-      endpoint: document.getElementById("endpointInput"),
-      model: document.getElementById("modelInput"),
-      apiKey: document.getElementById("apiKeyInput"),
-      saveSettingsBtn: document.getElementById("saveSettingsBtn")
-    };
-
-    function persist() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
-      } catch {}
-    }
-
-    function setFeedback(msg) {
-      el.feedback.textContent = msg;
-    }
-
-    function setEngineBadge(type, label) {
-      el.statusText.textContent = label;
-      el.statusDot.classList.toggle("warn", type !== "live");
-      el.badge.style.display = "inline-block";
-      el.badge.className = "result-badge " + (type === "live" ? "badge-live" : "badge-local");
-      el.badge.textContent = type === "live" ? "CANLI AI" : "YEREL AKILLI MOTOR";
-    }
-
-    function formatSimpleMarkdown(md) {
-      const escaped = md
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-
-      return escaped
-        .replace(/^### (.*)$/gm, "<h3>$1</h3>")
-        .replace(/^## (.*)$/gm, "<h3>$1</h3>")
-        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-        .replace(/\n{2,}/g, "</p><p>")
-        .replace(/^/, "<p>")
-        .concat("</p>")
-        .replace(/<p><\/p>/g, "")
-        .replace(/<p>(<h3>.*?<\/h3>)<\/p>/g, "$1");
-    }
-
-    function renderPlan(md, sourceType) {
-      currentMarkdown = md;
-      el.output.className = "solution-body";
-      el.output.innerHTML = formatSimpleMarkdown(md);
-      if (sourceType) {
-        setEngineBadge(sourceType, sourceType === "live" ? "Canlı AI Aktif" : "Yerel Motor Aktif");
+      if (agentId === "executor") {
+        return `• İlk 2 saat: Hedefi tek cümlelik somut çıktıya indir ve ilk taslağı çıkar.\n• İlk 24 saat: Çalışan ilk versiyonu yayına al veya teste sok.\n• İlk 72 saat: Geri bildirime göre en zayıf adımı iyileştir.`;
       }
+      if (agentId === "critic") {
+        return `• Tuzak: Çok fazla fikir/özellik eklemek başlangıcı yavaşlatır.\n• Kontrol kuralı: Ölçülebilir tek bir ilerleme görünmeden yeni yan işe atlama.`;
+      }
+      return `Kanca: "${goal}" için 24 saatte çalışan net plan çıkarıldı.\nÖzet: ${prevSummary.slice(0, 140)}...`;
     }
 
-    function buildLocalStrategicPlan(problem, constraint, mode) {
-      const cText = constraint || "belirtilen süre ve mevcut kaynaklar";
-      const depthNote = mode === "deep"
-        ? "Ayrıca her adımda belirsizliği azaltmak için önce en küçük doğrulanabilir çıktıyı üret ve geri bildirime göre yön değiştir."
-        : "Gereksiz detayları ayıkla ve doğrudan ilk aksiyona geç.";
+    async function askAgent(agent, goal, ctx, focus, prevText) {
+      const prompt = [
+        `Sen bir agent topluluğundaki "${agent.name}" (${agent.tag}) rolüsün.`,
+        `Görev: ${goal}`,
+        `Kısıtlar: ${ctx || "Belirtilmedi"}`,
+        `Öncelik Odak: ${focus || "Hız ve etki"}`,
+        prevText ? `Önceki ajanların özeti:\n${prevText}` : "",
+        `Kısa, net, sert ve uygulanabilir Türkçe yanıt ver (en fazla 4 madde veya 3 kısa cümle).`
+      ].filter(Boolean).join("\n");
 
-      return [
-        `### 1. Kök Neden & Darboğaz Analizi`,
-        `**Sorun:** ${problem}\n**Kısıt:** ${cText}\nBu tür durumlarda asıl tıkanıklık genellikle bilgisizlikten değil, hedefin tek seferde çok büyük tutulmasından ve ilk somut adımın net olmamasından kaynaklanır. ${depthNote}`,
-        `### 2. İlk 24–72 Saat İcra Planı`,
-        `- **Adım 1 (İlk 30 Dakika):** Hedefi tek bir net sonuca indirge ve bugün tamamlanabilecek en küçük somut çıktıyı tanımla.\n- **Adım 2 (İlk 24 Saat):** Zamanın en verimli diliminde dikkat dağıtıcıları kapatıp yalnızca bu ilk çıktıyı bitirmeye odaklan.\n- **Adım 3 (İlk 72 Saat):** İlk çıktıyı test et veya ölç; işe yarayan kısmı koruyup zayıf noktayı bir sonraki döngüde düzelt.`,
-        `### 3. Riskler, Tuzaklar & Kontrol Kuralı`,
-        `- **Erteleme & Mükemmeliyetçilik:** Kusursuz plan beklemek başlangıcı geciktirir; önce çalışan taslak çıkar.\n- **Kontrol Kuralı:** Her gün sonunda *"Bugün ölçülebilir hangi somut ilerlemeyi kaydettim?"* sorusuna net bir yanıt verilmeden gün kapatılmamalı.`
-      ].join("\n\n");
-    }
-
-    async function callLiveAi(problem, constraint, mode) {
-      const systemPrompt =
-        "Sen üst düzey bir strateji ve problem çözme motorusun. Kullanıcının sorununu ve kısıtını analiz et; net, somut, maddeli ve hemen uygulanabilir bir çözüm planı sun. " +
-        "Şu 3 başlığı kullan: '### 1. Kök Neden & Darboğaz Analizi', '### 2. İlk 24–72 Saat İcra Planı', '### 3. Riskler, Tuzaklar & Kontrol Kuralı'. " +
-        "Boş laf veya genel geçer klişeler yazma; doğrudan uygulanabilir adımlar ver. Yanıtı Türkçe yaz.";
-
-      const userPrompt =
-        `Sorun / Hedef: ${problem}\n` +
-        `Kısıt / Süre: ${constraint || "Belirtilmedi"}\n` +
-        `Mod: ${mode === "deep" ? "Stratejik ve derin analiz" : "Hızlı ve doğrudan icra"}`;
-
-      const customEndpoint = (prefs.endpoint || "").trim();
-      const modelName = (prefs.model || "openai").trim() || "openai";
-      const apiKey = (prefs.apiKey || "").trim();
-
-      // 1. Deneme: Kullanıcı özel endpoint girdiyse veya OpenAI-uyumlu ücretsiz uç nokta
-      const chatUrl = customEndpoint || "https://text.pollinations.ai/openai";
-      const headers = { "Content-Type": "application/json" };
-      if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
-
-      const controller1 = new AbortController();
-      const t1 = setTimeout(() => controller1.abort(), 11000);
+      const ac = new AbortController();
+      const timer = setTimeout(() => ac.abort(), 7000);
       try {
-        const res = await fetch(chatUrl, {
+        const res = await fetch("https://text.pollinations.ai/", {
           method: "POST",
-          headers,
-          signal: controller1.signal,
+          headers: { "Content-Type": "application/json" },
+          signal: ac.signal,
           body: JSON.stringify({
-            model: modelName,
             messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: userPrompt }
+              { role: "system", content: "Kısa, keskin, doğrudan uygulanabilir strateji ve icra yanıtı ver." },
+              { role: "user", content: prompt }
             ],
-            temperature: 0.45
+            model: "openai",
+            private: true
           })
         });
-        clearTimeout(t1);
-        if (res.ok) {
-          const data = await res.json();
-          const content = data?.c
+        clearTimeout(timer);
+        if (!res.ok) throw new Error("err");
+        const txt = (await res.text()).trim();
+        if (txt.length < 20) throw new Error("short");
+        return { text: txt, mode: "Canlı AI" };
+      } catch {
+        clearTimeout(timer);
+        return { text: localAgentReply(agent.id, goal, ctx, focus, prevText), mode: "Yerel Motor" };
+      }
+    }
+
+    function renderFeed(items) {
+      if (!items.length) {
+        feedArea.className = "sub";
+        feedArea.textContent = "Henüz görev çalıştırılmadı.";
+        return;
+      }
+      feedArea.className = "";
+      feedArea.innerHTML = items.map(it => `
+        <div class="feed-item">
+          <div class="feed-head">
+            <span class="feed-title">${it.name}</span>
+            <span class="feed-tag">${it.tag} • ${it.mode}</span>
+          </div>
+          <div class="feed-body">${it.text.replace(/</g, "&lt;")}</div>
+        </div>
+      `).join("");
+    }
+
+    document.getElementById("runSquadBtn").addEventListener("click", async () => {
+      const goal = goalInput.value.trim() || "Karmaşık bir hedefi hızlı ve sıfır maliyetle sonuca ulaştırmak";
+      const ctx = ctxInput.value.trim() || "sıfır bütçe, hızlı icra";
+      const focus = focusInput.value.trim() || "netlik ve hız";
+
+      const btn = document.getElementById("runSquadBtn");
+      btn.disabled = true;
+      btn.textContent = "Ajanlar Çalışıyor...";
+      resetAgents();
+
+      const items = [];
+      let chainSummary = "";
+
+      for (const ag of AGENTS) {
+        setAgentState(ag.id, "active", "Çalışıyor...");
+        statusMsg.textContent = `${ag.name} görevi işliyor...`;
+        const out = await askAgent(ag, goal, ctx, focus, chainSummary);
+        items.push({ name: ag.name, tag: ag.tag, text: out.text, mode: out.mode });
+        chainSummary += `\n[${ag.name}] ${out.text}`;
+        setAgentState(ag.id, "done", out.mode);
+        renderFeed(items);
+      }
+
+      lastFeed = items;
+      statusMsg.textContent = "4 ajan da görevini tamamladı.";
+      try {
+        localStorage.setItem(KEY, JSON.stringify({ goal, ctx, focus, feed: lastFeed }));
+      } catch {}
+
+      btn.disabled = false;
+      btn.textContent = "Agent Topluluğunu Çalıştır";
+    });
+
+    document.getElementById("shareSquadBtn").addEventListener("click", async () => {
+      const g = encodeURIComponent(goalInput.value.trim() || "Karmaşık bir hedefi hızlı ve sıfır maliyetle sonuca ulaştırmak");
+      const c = encodeURIComponent(ctxInput.value.trim() || "sıfır bütçe, hızlı icra");
+      const url = `${location.origin}${location.pathname}?g=${g}&c=${c}`;
+      const msg = `4 ajanlık ekibe şu görevi verdim, planı çıkar: ${url}`;
+      if (navigator.share) {
+        try { await navigator.share({ title: "SWARM // SQUAD", text: msg, url }); return; } catch {}
+      }
+      try {
+        await navigator.clipboard.writeText(msg);
+        statusMsg.textContent = "Paylaşım linki kopyalandı.";
+      } catch {
+        prompt("Kopyala:", msg);
+      }
+    });
+
+    document.getElementById("copyAllBtn").addEventListener("click", async () => {
+      if (!lastFeed.length) { statusMsg.textContent = "Kopyalanacak çıktı yok."; return; }
+      const full = lastFeed.map(i => `=== ${i.name} (${i.tag}) ===\n${i.text}`).join("\n\n");
+      try {
+        await navigator.clipboard.writeText(full);
+        statusMsg.textContent = "Tüm ajan akışı kopyalandı.";
+      } catch {
+        prompt("Kopyala:", full);
+      }
+    });
+
+    document.getElementById("clearFeedBtn").addEventListener("click", () => {
+      lastFeed = [];
+      resetAgents();
+      renderFeed([]);
+      statusMsg.textContent = "Akış temizlendi.";
+      try { localStorage.removeItem(KEY); } catch {}
+    });
+  </script>
+</body>
+</html>
+

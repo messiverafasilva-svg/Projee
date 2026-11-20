@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SOLVER // CORE</title>
+  <style>
+    :root {
+      --bg: #05070c; --card: #0c121e; --card2: #121b2d;
+      --line: #1e2c44; --text: #f8fafc; --muted: #94a3b8;
+      --accent: #00f5a0; --blue: #38bdf8; --warn: #fbbf24; --hot: #ff3366;
+    }
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body {
+      margin: 0; padding: 14px; max-width: 820px; margin-inline: auto;
+      background: radial-gradient(circle at top, #0c182e 0%, var(--bg) 55%);
+      color: var(--text); line-height: 1.5;
+    }
+    h1 { margin: 0 0 4px; font-size: 1.35rem; }
+    .sub { color: var(--muted); font-size: 0.84rem; margin-bottom: 14px; }
+    .card {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: 14px; padding: 14px; margin-bottom: 12px;
+    }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .chip {
+      background: var(--card2); color: var(--blue); border: 1px solid var(--line);
+      border-radius: 999px; padding: 6px 10px; font-size: 0.76rem; font-weight: 700; cursor: pointer;
+    }
+    textarea, input, button {
+      width: 100%; border-radius: 10px; padding: 11px 12px; font-size: 0.92rem;
+    }
+    textarea, input {
+      background: #060a12; color: var(--text); border: 1px solid var(--line); margin-bottom: 10px;
+    }
+    textarea { min-height: 78px; resize: vertical; }
+    button { border: none; font-weight: 800; cursor: pointer; }
+    .btn-go { background: var(--accent); color: #03150e; margin-bottom: 8px; }
+    .btn-sh { background: var(--hot); color: #fff; margin-bottom: 8px; }
+    .btn-sec { background: var(--card2); color: var(--text); border: 1px solid var(--line); }
+    .step { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 10px; font-size: 0.9rem; }
+    .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 800; margin-bottom: 4px; }
+    .p-ok { background: rgba(0,245,160,0.15); color: var(--accent); }
+    .p-fix { background: rgba(251,191,36,0.16); color: var(--warn); }
+    .meta { color: var(--muted); font-size: 0.8rem; margin-top: 6px; }
+    ul { margin: 6px 0 0; padding-left: 18px; color: #cbd5e1; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <h1>SOLVER // CORE</h1>
+  <div class="sub">Gerçek sorunları parçala, en yüksek kaldıraçlı çıkış planını çıkar ve tek linkle paylaş</div>
+
+  <div class="card">
+    <div class="chips">
+      <button type="button" class="chip" data-p="Zamana karşı yetişmeyen büyük bir hedefi/sınavı/projeyi en hızlı şekilde tamamlamak">Zaman & Yetişmeyen İş</button>
+      <button type="button" class="chip" data-p="İki güçlü seçenek arasında kararsız kalıp en yüksek getirili yolu seçmek">Kritik Karar Kilitlenmesi</button>
+      <button type="button" class="chip" data-p="Dağınık notları, fikirleri ve görevleri tek bir net uygulama sırasına sokmak">Dağınıklık & Odak Kaybı</button>
+      <button type="button" class="chip" data-p="Sıfır bütçe ve kısıtlı kaynakla yüksek etki üreten bir sistem kurmak">Kısıtlı Kaynakla Yüksek Etki</button>
+    </div>
+
+    <textarea id="probInput" placeholder="Şu an çözmek istediğin gerçek sorunu veya hedefi yaz..."></textarea>
+    <input id="limitInput" placeholder="Kısıtın veya süren ne? (ör: 7 gün, sınırlı zaman, tek kişi)" />
+
+    <button id="solveBtn" class="btn-go">Sorunu Çöz & Uygulanabilir Plan Çıkar</button>
+    <button id="shareBtn" class="btn-sh">Bu Çözüm Motorunu Tek Tıkla Paylaş</button>
+    <button id="clearBtn" class="btn-sec">Hafızayı Temizle</button>
+    <div id="status" class="meta">Hazır • Sıfır maliyet • Yerel hafıza aktif</div>
+  </div>
+
+  <div class="card">
+    <strong>Çözüm & İcra Planı</strong>
+    <div id="planArea">Henüz bir sorun girilmedi.</div>
+  </div>
+
+  <div class="card">
+    <strong>Sistemin Çıkardığı Kalite Kuralları (<span id="ruleCnt">0</span>)</strong>
+    <ul id="rulesList"></ul>
+  </div>
+
+  <script>
+    const STORE_KEY = "solver_core_v1";
+    const load = () => {
+      try { return JSON.parse(localStorage.getItem(STORE_KEY)) || { rules: [], solved: 0 }; }
+      catch { return { rules: [], solved: 0 }; }
+    };
+    const save = (d) => localStorage.setItem(STORE_KEY, JSON.stringify(d));
+    let state = load();
+
+    const params = new URLSearchParams(location.search);
+    if (params.get("p")) document.getElementById("probInput").value = params.get("p");
+    if (params.get("l")) document.getElementById("limitInput").value = params.get("l");
+
+    document.querySelectorAll(".chip").forEach(ch => {
+      ch.addEventListener("click", () => {
+        document.getElementById("probInput").value = ch.dataset.p;
+      });
+    });
+
+    function buildSolution(stage, prob, limit, attempt, prevIssue, rules) {
+      if (attempt === 1 && !prevIssue) {
+        return `${stage}: "${prob}" için genel başlangıç adımı.`;
+      }
+      const ruleInfo = rules.length ? ` (${rules.length} kalite kuralı uygulandı)` : "";
+      return `${stage}: "${prob}" sorununda (${limit}) ilk 24 saatte en yüksek etkiyi veren somut adımı belirle, ölçülebilir çıktı hedefi koy ve erteleme/tıkanma riskini kes${ruleInfo}.`;
+    }
+
+    function auditSolution(text) {
+      const ok = /24 saat|ölçülebilir|somut|risk|çıktı|adım/i.test(text) && text.length >= 90;
+      if (!ok) return { pass: false, reason: "Somut 24 saatlik aksiyon, ölçülebilir çıktı veya risk önlemi eksik." };
+      return { pass: true, reason: "Uygulanabilir." };
+    }
+
+    function renderRules() {
+      document.getElementById("ruleCnt").textContent = state.rules.length;
+      const ul = document.getElementById("rulesList");
+      ul.innerHTML = state.rules.length
+        ? state.rules.map(r => `<li>${r}</li>`).join("")
+        : "<li>İlk çözüm döngüsünde eksik kalan noktalar sistem tarafından kurala dönüştürülür.</li>";
+    }
+
+    function solveProblem() {
+      const prob = document.getElementById("probInput").value.trim() || "Karmaşık bir hedefi adım adım uygulanabilir plana dönüştürmek";
+      const limit = document.getElementById("limitInput").value.trim() || "kısıtlı süre ve net odak";
+
+      const stages = [
+        { tag: "1. KÖK & KALDIRAÇ", title: "Sorunun Asıl Darboğazını Bul" },
+        { tag: "2. İLK 24 SAAT", title: "Hemen Atılacak Somut Adım" },
+        { tag: "3. KONTROL & RİSK", title: "Tıkanmayı Önleyen Kural" }
+      ];
+
+      let html = `<div class="meta"><strong>Sorun:</strong> ${prob}<br><strong>Kısıt / Süre:</strong> ${limit}</div>`;
+
+      stages.forEach(st => {
+        let attempt = 0, issue = "", accepted = "", ruleNote = "";
+        while (attempt < 3) {
+          attempt++;
+          const draft = buildSolution(st.title, prob, limit, attempt, issue, state.rules);
+          const chk = auditSolution(draft);
+          if (chk.pass) {
+            accepted = draft;
+            break;
+          } else {
+            issue = chk.reason;
+            const rule = `[${st.tag}] ${chk.reason}`;
+            if (!state.rules.includes(rule)) {
+              state.rules.push(rule);
+              ruleNote = `<div class="meta"><span class="pill p-fix">KURAL EKLENDİ</span> ${rule}</div>`;
+            }
+          }
+        }
+        html += `<div class="step"><span class="pill p-ok">${st.tag}</span><div>${accepted}</div>${ruleNote}</div>`;
+      });
+
+      state.solved += 1;
+      save(state);
+      renderRules();
+      document.getElementById("planArea").innerHTML = html;
+      document.getElementById("status").textContent = `Çözüldü #${state.solved} • Aktif kural: ${state.rules.length}`;
+    }
+
+    document.getElementById("solveBtn").addEventListener("click", solveProblem);
+
+    document.getElementById("shareBtn").addEventListener("click", async () => {
+      const p = encodeURIComponent(document.getElementById("probInput").value.trim() || "Karmaşık bir hedefi adım adım uygulanabilir plana dönüştürmek");
+      const l = encodeURIComponent(document.getElementById("limitInput").value.trim() || "kısıtlı süre ve net odak");
+      const url = `${location.origin}${location.pathname}?p=${p}&l=${l}`;
+      const msg = `Şu sorunu ve kısıtı girip anında adım adım plan çıkardım. Kendi sorununu dene: ${url}`;
+      if (navigator.share) {
+        try { await navigator.share({ title: "SOLVER // CORE", text: msg, url }); return; } catch {}
+      }
+      try {
+        await navigator.clipboard.writeText(msg);
+        document.getElementById("status").textContent = "Paylaşım metni ve link kopyalandı.";
+      } catch {
+        prompt("Kopyala:", msg);
+      }
+    });
+
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      localStorage.removeItem(STORE_KEY);
+      state = load();
+      renderRules();
+      document.getElementById("planArea").innerHTML = "Henüz bir sorun girilmedi.";
+      document.getElementById("status").textContent = "Hafıza sıfırlandı.";
+    });
+
+    renderRules();
+  </script>
+</body>
+</html>
+
